@@ -112,7 +112,6 @@ class Reference(Generic, AuditLog):
     indexer_cc_code = models.CharField(_('Indexed by'), max_length=55, blank=True)
 
     # relations
-    logs = GenericRelation(LogEntry)
     collection = GenericRelation(Relationship)
 
     def __init__(self, *args, **kwargs):
@@ -229,6 +228,8 @@ class ReferenceSource(Reference):
     symbol = models.TextField(_('Symbol'), blank=True)
     # field tag 69
     isbn = models.CharField(_('ISBN'), max_length=60, blank=True)
+    # field tag 724
+    doi_number = models.CharField(_('DOI number'), max_length=150, blank=True)
 
     def __unicode__(self):
         source_title = ''

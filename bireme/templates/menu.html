@@ -20,7 +20,7 @@
                                     <ul class="dropdown-menu" role="menu" aria-labelledby="menu_sources">
                             {% endif %}
                             {% if service_role.LIS %}
-                                <li><a href="{% url 'main.views.list_resources' %}" title=""><i class="icon-star"></i> {% trans "Resources" %}</a></li>
+                                <li><a href="{% url 'main.views.list_resources' %}" title=""><i class="icon-star"></i> {% trans "Internet resources" %}</a></li>
                             {% endif %}
 
                             {% if service_role.DirEve %}
@@ -32,11 +32,7 @@
                             {% endif %}
 
                             {% if service_role.LILDBI %}
-                                {% if service_role.LILDBI = 'editor_llxp' %}
-                                    <li><a href="{% url 'list_biblioref_sources' %}?document_type=S" title=""><i class="icon-book"></i> {% trans "Bibliographic records" %}</a></li>
-                                {% else %}
-                                    <li><a href="{% url 'list_biblioref' %}" title=""><i class="icon-book"></i> {% trans "Bibliographic records" %}</a></li>
-                                {% endif %}
+                                <li><a href="{% url 'list_biblioref' %}" title=""><i class="icon-book"></i> {% trans "Bibliographic records" %}</a></li>
                             {% endif %}
 
                             {% if service_role.TITLE and user_cc = 'BR1.1' %}
@@ -47,7 +43,7 @@
                                 <li><a href="{% url 'list_descriptor' %}?ths=1" title=""><i class="icon-book"></i> {% trans "Thesaurus DeCS" %}</a></li>
                             {% endif %}
 
-                            {% if service_role.TesauroFUNASA and user_cc = 'BR1.1' %}
+                            {% if service_role.TesauroFUNASA == 'edi' %}
                                 <li><a href="{% url 'list_descriptor' %}?ths=2" title=""><i class="icon-book"></i> {% trans "Thesaurus FUNASA" %}</a></li>
                             {% endif %}
 
@@ -55,7 +51,7 @@
                                 <li><a href="{% url 'list_legislation' %}" title=""><i class="icon-book"></i> {% trans "Legislation" %}</a></li>
                             {% endif %}
 
-                            {% if service_role.DirIns %}
+                            {% if user_type = 'advanced' and service_role.DirIns %}
                                 <li><a href="{% url 'list_institution' %}" title=""><i class="icon-home"></i> {% trans "Institutions" %}</a></li>
                             {% endif %}
 

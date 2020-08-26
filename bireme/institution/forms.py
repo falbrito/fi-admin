@@ -22,25 +22,23 @@ class InstitutionForm(forms.ModelForm):
         user_cc = self.user_data.get('user_cc', '')
         # only enable edition of cc_code field for BIREME staff
         if user_cc != 'BR1.1':
+            self.fields['status'].widget = widgets.HiddenInput()
             self.fields['cc_code'].widget = widgets.HiddenInput()
 
 class URLForm(forms.ModelForm):
     # add class to field
     url = forms.URLField(widget=widgets.URLInput(attrs={'class': 'input-xlarge'}))
 
-class PersonForm(forms.ModelForm):
-    # add class to field
-    name = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-xlarge'}))
+class ContactForm(forms.ModelForm):
+    class Meta:
+        exclude = ('prefix', )
 
-class EmailForm(forms.ModelForm):
     # add class to field
-    email_name = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-xlarge'}))
+    name = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-large'}), required=False)
+    job_title = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-medium'}), required=False)
+    email = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-medium'}), required=False)
+    country_area_code = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-mini'}), required=False)
 
-class PhoneForm(forms.ModelForm):
-    # add class to field
-    phone_name = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-xlarge'}))
-    country_code = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-mini'}))
-    phone_number = forms.CharField(widget=widgets.TextInput(attrs={'class': 'input-medium'}))
 
 class AdmForm(forms.ModelForm):
     notes = forms.CharField(widget=widgets.Textarea(attrs={'class': 'input-xxlarge'}), required=False)
@@ -71,14 +69,8 @@ class UnitForm(forms.ModelForm):
 URLFormSet = inlineformset_factory(Institution, URL, form=URLForm,
                                    fields='__all__', can_delete=True, extra=1)
 
-PersonFormSet = inlineformset_factory(Institution, ContactPerson, form=PersonForm,
+ContactFormSet = inlineformset_factory(Institution, Contact, form=ContactForm,
                                       fields='__all__', can_delete=True, extra=1)
-
-PhoneFormSet = inlineformset_factory(Institution, ContactPhone, form=PhoneForm,
-                                     fields='__all__', can_delete=True, extra=1)
-
-EmailFormSet = inlineformset_factory(Institution, ContactEmail, form=EmailForm,
-                                     fields='__all__', can_delete=True, extra=1)
 
 UnitLevelFormSet = inlineformset_factory(Institution, UnitLevel,
                                          fields='__all__', can_delete=True, extra=1)

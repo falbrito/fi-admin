@@ -19,6 +19,17 @@
         <h2><i class='icon-dashboard'></i> {% trans "Dashboard" %} <small>{{ user.username }} ({{ user_cc }}) {% if networks|length > 0 %} - {% trans 'Networks' %}: {{ networks|join:", " }}{% endif %} </small></h2>
     </div>
 
+    {% if user_cc == "BR1.1" and dedup_is_unavailable %}
+    <div class="row">
+        <div class="span12">
+            <div class="alert alert-error">
+                <strong>O serviço DeDup está indisponível!</strong>
+                <a href="#" class="close" data-dismiss="alert">&times;</a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
     <div class="row">
         <div class="span6">
             <div class="well sidebar-nav">
@@ -55,11 +66,25 @@
                     <div id="llxp_indexed_by_cc"></div>
                 </div>
             {% endif %}
+
+            {% if service_role.DirIns %}
+            <div class="well sidebar-nav">
+                <h3>{% trans "Institutional" %}</h3>
+                <ul>
+                    <li><a href="{% url 'list_institution' %}">{% trans "Update your institution information" %}</a></li>
+                    {% if institution_id %}
+                        <li><a href="#" onclick="javascript:open_adhesionterm('{{institution_id}}')">{% trans "Review adhesion term" %}</a></li>
+                    {% endif %}
+                </ul>
+            </div>
+            {% endif %}
+
         </div>
     </div>
 {% endblock %}
 
 {% block extrajs %}
+<script src="{% static 'js/adhesionterm.js' %}"></script>
 
 <script type="text/javascript">
     $(function() {

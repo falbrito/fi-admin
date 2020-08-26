@@ -6,11 +6,16 @@ from django.conf import settings
 from api.resources_api import LinkResource
 from api.events_api import EventResource
 from api.multimedia_api import MediaResource
-from api.title_api import TitleResource
+from api.title_api import TitleResource, IssueResource
 from api.bibliographic import ReferenceResource
 from api.legislation import LeisrefResource
 from api.oer_api import OERResource
 from api.classification_api import *
+from api.thesaurus_api_desc import *
+from api.thesaurus_api_qualif import *
+from api.thesaurus_api import *
+from api.thesaurus_solr_api import *
+from api.institution_api import *
 
 # Uncomment the next two lines to enable the admin:
 from django.contrib import admin
@@ -20,12 +25,26 @@ link_resource = LinkResource()
 event_resource = EventResource()
 media_resource = MediaResource()
 title_resource = TitleResource()
+issue_resource = IssueResource()
 reference_resource = ReferenceResource()
 leisref_resource = LeisrefResource()
 oer_resource = OERResource()
 collection_resource = CollectionResource()
 classification_resource = ClassificationResource()
 community_resource = CommunityResource()
+institution_resource = InstitutionResource()
+
+# used to render records in ID format
+thesaurus_resource_desc = ThesaurusResourceDesc()
+thesaurus_resource_qualif = ThesaurusResourceQualif()
+
+# used to render records in JSON format
+thesaurus_resource_desc_API = ThesaurusAPIDescResource()
+thesaurus_resource_qualif_API = ThesaurusAPIQualifResource()
+
+# used to render records in JSON format for solr index
+thesaurus_resource_desc_index_API = ThesaurusAPIDescResourceIndex()
+thesaurus_resource_qualif_index_API = ThesaurusAPIQualifResourceIndex()
 
 urlpatterns = patterns('',
     # Examples:
@@ -146,15 +165,31 @@ urlpatterns = patterns('',
     (r'^api/', include(event_resource.urls)),
     (r'^api/', include(media_resource.urls)),
     (r'^api/', include(title_resource.urls)),
+    (r'^api/', include(issue_resource.urls)),
     (r'^api/', include(reference_resource.urls)),
     (r'^api/', include(leisref_resource.urls)),
     (r'^api/', include(oer_resource.urls)),
     (r'^api/', include(community_resource.urls)),
     (r'^api/', include(collection_resource.urls)),
     (r'^api/', include(classification_resource.urls)),
+    (r'^api/', include(institution_resource.urls)),
+
     (r'^api/lis-old/search/', 'api.lis_old_api.search'),
     (r'^api/users/get_user_id/(?P<username>[a-zA-z0-9\.\-]{0,30})/$', 'api.users.get_user_id'),
     (r'^api/thematic/get_thematic_id/(?P<thematic_acronym>[a-zA-z0-9\.\-]{0,40})/$', 'api.thematic.get_thematic_id'),
+
+    # used to render records in ID format
+    (r'^api/descriptors/', include(thesaurus_resource_desc.urls)),
+    (r'^api/qualifiers/', include(thesaurus_resource_qualif.urls)),
+
+    # used to render records in JSON format
+    (r'^api/desc/', include(thesaurus_resource_desc_API.urls)),
+    (r'^api/qualif/', include(thesaurus_resource_qualif_API.urls)),
+
+    # used to render records in JSON format for solr index
+    (r'^api/desc/index/', include(thesaurus_resource_desc_index_API.urls)),
+    (r'^api/qualif/index/', include(thesaurus_resource_qualif_index_API.urls)),
+
 
     # internationalization
     url(r'^i18n/', include('django.conf.urls.i18n')),

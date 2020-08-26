@@ -12,7 +12,7 @@ from form_utils.forms import BetterModelForm, FieldsetCollection
 from django.conf import settings
 
 from main.models import Descriptor
-from utils.forms import DescriptorRequired
+from utils.forms import BaseDescriptorInlineFormSet
 from utils.templatetags.app_filters import fieldtype
 from title.models import Title, IndexRange
 from utils.models import AuxCode
@@ -85,7 +85,6 @@ class BiblioRefForm(BetterModelForm):
         if self.document_type == 'Tm':
             self.fields['publisher'].widget = widgets.HiddenInput()
             self.fields['isbn'].widget = widgets.HiddenInput()
-
 
         # load serial titles for serial analytic
         if self.document_type == 'S' and not self.reference_source:
@@ -263,11 +262,18 @@ class BiblioRefForm(BetterModelForm):
                 if not data.get('volume_serial') and not data.get('issue_number'):
                     self.add_error('volume_serial', _("Volume or issue number mandatory"))
 
+            #LILACS validation flag is mandatory when indexed in LILACS
+            indexed_list = [indexed.acronym for indexed in self.cleaned_data.get('indexed_database')]
+            if 'LILACS' in indexed_list:
+                lilacs_validation_flag = self.cleaned_data.get('LILACS_indexed')
+                if not lilacs_validation_flag:
+                    self.add_error('LILACS_indexed', _("Required when indexed in LILACS database"))
+
         # Always return the full collection of cleaned data.
         return data
 
     def clean_LILACS_indexed(self):
-        data = self.cleaned_data['LILACS_indexed']
+        data = self.cleaned_data.get('LILACS_indexed')
         if data is True:
             self.is_LILACS = True
 
@@ -489,9 +495,9 @@ class BiblioRefForm(BetterModelForm):
                 if not pages and not pages_monographic and not data == 's':
                     self.add_error(field, _("For the tradicional material of LILACS which is only in electronic form you should describe it as Electronic"))
 
-        if data and self.is_LILACS and record_type == 'a':
-            if self.document_type[0] == 'S' and data != 's':
-                self.add_error(field, _('For articles, item form must be empty or Eletronic'))
+            if record_type == 'a':
+                if self.document_type[0] == 'S' and data != 's':
+                    self.add_error(field, _('For articles, item form must be empty or Eletronic'))
 
         return data
 
@@ -540,7 +546,7 @@ class BiblioRefForm(BetterModelForm):
         LILACS_compatible_languages = ['pt', 'es', 'en', 'fr']
         url_list = []
 
-        if self.is_visiblefield('title') and status == 1:
+        if self.is_visiblefield('title'):
             if not data:
                 self.add_error(field, _("Mandatory"))
             else:
@@ -565,7 +571,7 @@ class BiblioRefForm(BetterModelForm):
         status = self.cleaned_data.get('status')
         LILACS_compatible_languages = ['pt', 'es', 'en', 'fr']
 
-        if self.is_visiblefield('title_monographic') and status == 1:
+        if self.is_visiblefield('title_monographic'):
             if data:
                 occ = 0
                 for title in data:
@@ -853,6 +859,17 @@ class BiblioRefForm(BetterModelForm):
 
         return data
 
+    def clean_doi_number(self):
+        field = 'doi_number'
+        data = self.cleaned_data.get(field)
+
+        if data and self.is_visiblefield(field):
+            if not data[0].isdigit():
+                self.add_error(field, _('Please inform a valid DOI number. Ex. 10.1000/xyz123'))
+
+        return data
+
+
     def save(self, *args, **kwargs):
         obj = super(BiblioRefForm, self).save(commit=False)
 
@@ -911,34 +928,32 @@ class BiblioRefForm(BetterModelForm):
         if self.document_type == 'Tm':
             obj.publisher = 's.n'
 
+        # check if reference doesn't have indexer_cc_code info
+        if not obj.indexer_cc_code:
+            ctype = obj.get_content_type_id()
+            # check if user has indexed this document
+            has_indexed = Descriptor.objects.filter(object_id=obj.id, content_type_id=ctype,
+                                                    created_by=self.user).exists()
+
+            if has_indexed:
+                # update reference indexer_cc_code field
+                obj.indexer_cc_code = self.user_data.get('user_cc','')
+
         # save object
         obj.save()
-
-        # update DeDup service
-        if self.document_type == 'Sas':
-            dedup_params = {"ano_publicacao": obj.source.publication_date_normalized[:4],
-                            "titulo_artigo": obj.title[0]['text'], "titulo_revista": obj.source.title_serial}
-            json_data = json.dumps(dedup_params, ensure_ascii=True)
-            dedup_headers = {'Content-Type': 'application/json'}
-            ref_id = "fiadmin-{0}".format(obj.id)
-            dedup_url = "{0}/{1}/{2}/{3}".format(settings.DEDUP_PUT_URL, 'lilacs_Sas', 'LILACS_Sas_Three', ref_id)
-            try:
-                dedup_request = requests.post(dedup_url, headers=dedup_headers, data=json_data, timeout=5)
-            except:
-                pass
 
         return obj
 
 class BiblioRefSourceForm(BiblioRefForm):
     class Meta:
         model = ReferenceSource
-        exclude = ('cooperative_center_code',)
+        exclude = ('cooperative_center_code', 'indexer_cc_code')
 
 
 class BiblioRefAnalyticForm(BiblioRefForm):
     class Meta:
         model = ReferenceAnalytic
-        exclude = ('source', 'cooperative_center_code',)
+        exclude = ('source', 'cooperative_center_code', 'indexer_cc_code')
 
 
 class AttachmentForm(forms.ModelForm):
@@ -1020,23 +1035,17 @@ class DescriptorForm(forms.ModelForm):
         obj = super(DescriptorForm, self).save(commit=False)
         # for bibliographic default value for descriptor is admited
         obj.status = 1
-
         obj.save()
-        # if is first center to index the reference save the code in indexer_cc_code
-        reference = Reference.objects.get(id=obj.object_id)
-        # check if reference already have indexer_cc_code info
-        if not reference.indexer_cc_code:
-            # get user profile cc code
-            user = obj.created_by
-            user_data = simplejson.loads(user.profile.data)
-            # fill reference field
-            reference.indexer_cc_code = user_data.get('cc','')
-            # update record
-            reference.save()
 
 # definition of inline formsets
-DescriptorFormSet = generic_inlineformset_factory(Descriptor, form=DescriptorForm,
-                                                  exclude=('status',), can_delete=True, extra=1)
+DescriptorFormSet = generic_inlineformset_factory(
+    Descriptor,
+    form=DescriptorForm,
+    formset=BaseDescriptorInlineFormSet,
+    exclude=('status',),
+    can_delete=True,
+    extra=1
+)
 
 AttachmentFormSet = generic_inlineformset_factory(Attachment, form=AttachmentForm,
                                                   exclude=('short_url',), can_delete=True, extra=1)

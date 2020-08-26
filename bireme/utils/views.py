@@ -15,8 +15,10 @@ from pkg_resources import resource_filename
 
 import csv
 import colander
+import requests
 import deform
 import json
+import urllib
 
 
 # form actions
@@ -32,6 +34,9 @@ ACTIONS = {
     'filter_created_by_user': "",
     'filter_created_by_cc': "",
     'filter_indexed_database': "",
+    'filter_act_type': "",
+    'filter_type': "",
+    'filter_category': "",
     'filter_country': "",
     'document_type': "",
     'review_type': "",
@@ -232,3 +237,44 @@ def field_assist(request, **kwargs):
         'module_name': module_name,
         'deform_dependencies': form.get_widget_resources()
     })
+
+@csrf_exempt
+def decs_suggestion(request):
+    text_to_analyze = request.POST.get('text_to_analyze')
+    output_lang = request.POST.get('output_lang')
+    text_by_lang = {}
+    decs_list = []
+    decs_list_unique = []
+    decs_ids = []
+    
+    text_to_analyze_json = json.loads(text_to_analyze)
+
+    for text in text_to_analyze_json:
+        lang = str(text['_i'])
+        # concat texts of the same language
+        text_by_lang[lang] = text_by_lang.get(lang, '') + ' ' + text['text']
+    
+    service_url = settings.DECS_HIGHLIGHTER_URL
+
+    headers = {"Content-Type": "application/x-www-form-urlencoded; charset=UTF-8"}
+    
+    for lang, text in text_by_lang.items():
+        service_params = {'document': text, 'scanLang': lang, 'pubType': 'h', 'outLang': output_lang}
+
+        r = requests.post(service_url, data=service_params, headers=headers)
+        if r.status_code == 200:
+            response_json = r.json()
+            decs_list_response = response_json['positions']
+
+            for decs_term in decs_list_response:
+                decs_id = decs_term['id']
+                if decs_id not in decs_ids:
+                    decs_ids.append(decs_id)
+                    decs_list_unique.append(decs_term)
+
+
+    # sort final list
+    decs_list = sorted(decs_list_unique, key=lambda k: k['descriptor'])
+
+    return render_to_response('utils/decs_suggestion.html',
+                              {'decs_list': decs_list})

@@ -16,7 +16,7 @@ import urllib
 
 class CommunityResource(ModelResource):
     class Meta:
-        queryset = Collection.objects.filter(parent__isnull=True)
+        queryset = Collection.objects.filter(community_flag=True)
         allowed_methods = ['get']
         serializer = Serializer(formats=['json', 'xml'])
         resource_name = 'community'
@@ -53,10 +53,10 @@ class CommunityResource(ModelResource):
 
     def get_country_list(self, request, **kwargs):
         self.method_check(request, allowed=['get'])
-        community_list = Collection.objects.filter(parent__isnull=True)
+        community_list = Collection.objects.filter(community_flag=True, country__isnull=False)
         country_list = [community.country for community in community_list]
         country_list_unique = set(country_list)
-        country_list_detail = [{'name': c.get_translations(), 'id': c.id} for c in country_list_unique]
+        country_list_detail = [{'name': c.get_translations(), 'id': c.id, 'code': c.code} for c in country_list_unique]
 
         return self.create_response(request, country_list_detail)
 
@@ -87,15 +87,19 @@ class CollectionResource(ModelResource):
 
     def dehydrate(self, bundle):
         lang_param = bundle.request.GET.get('lang', 'en')
+        # lang param compatibility with 2 letters calls
+        if lang_param and lang_param == 'pt':
+            lang_param = 'pt-br'
 
         if bundle.obj.language != lang_param:
             try:
-                translation = CollectionLocal.objects.get(collection=bundle.obj.id, language=lang_param)
-                bundle.data['name'] = translation.name
-                bundle.data['language'] = translation.language
-                bundle.data['description'] = translation.description
-                if translation.image:
-                    bundle.data['image'] = '%s/%s' % (settings.VIEW_DOCUMENTS_BASE_URL, translation.image)
+                translation = CollectionLocal.objects.filter(collection=bundle.obj.id, language=lang_param).first()
+                if translation:
+                    bundle.data['name'] = translation.name
+                    bundle.data['language'] = translation.language
+                    bundle.data['description'] = translation.description
+                    if translation.image:
+                        bundle.data['image'] = '%s/%s' % (settings.VIEW_DOCUMENTS_BASE_URL, translation.image)
             except CollectionLocal.DoesNotExist:
                 # adjust image url in original bundle
                 if bundle.obj.image:

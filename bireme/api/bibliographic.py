@@ -29,7 +29,7 @@ import json
 
 class ReferenceResource(CustomResource):
     class Meta:
-        queryset = Reference.objects.all()
+        queryset = Reference.objects.prefetch_related('indexed_database', 'created_by', 'updated_by').all()
         allowed_methods = ['get']
         serializer = ISISSerializer(formats=['json', 'xml', 'isis_id'], field_tag=field_tag_map)
         resource_name = 'bibliographic'
@@ -78,13 +78,13 @@ class ReferenceResource(CustomResource):
         lang = request.GET.get('lang', 'pt')
         op = request.GET.get('op', 'search')
         id = request.GET.get('id', '')
-        sort = request.GET.get('sort', 'created_date desc')
+        sort = request.GET.get('sort', 'publication_date desc')
 
-        # filter result by approved resources (status=1)
+        # filter result by status = -3 (Migration) OR 0 (LILACS Express) OR 1 (published)
         if fq != '':
-            fq = '(status:1 AND django_ct:biblioref.reference*) AND %s' % fq
+            fq = '(status:("-3" OR "0" OR "1") AND django_ct:biblioref.reference*) AND %s' % fq
         else:
-            fq = '(status:1 AND django_ct:biblioref.reference*)'
+            fq = '(status:("-3" OR "0" OR "1") AND django_ct:biblioref.reference*)'
 
         # url
         search_url = "%siahx-controller/" % settings.SEARCH_SERVICE_URL
@@ -191,14 +191,16 @@ class ReferenceResource(CustomResource):
         bundle.data['descriptors_secondary'] = descriptors_secundary
         bundle.data['thematic_areas'] = [{'text': thematic.thematic_area.name} for thematic in thematic_areas]
         bundle.data['alternate_ids'] = [alt.alternate_id for alt in alternate_ids]
-        bundle.data['indexed_database'] = [database.acronym for database in bundle.obj.indexed_database.all()]
+        indexed_database_list = bundle.obj.indexed_database.all()
+        bundle.data['indexed_database'] = [database.acronym for database in indexed_database_list]
 
         # check if object has classification (relationship model)
         if bundle.obj.collection.count():
             community_list = []
             collection_list = []
 
-            for rel in bundle.obj.collection.all():
+            collection_all = bundle.obj.collection.all()
+            for rel in collection_all:
                 collection_labels = "|".join(rel.collection.get_translations())
                 collection_item = u"{}|{}".format(rel.collection.id, collection_labels)
                 collection_list.append(collection_item)
@@ -269,6 +271,13 @@ class ReferenceResource(CustomResource):
                                 bundle.data[field.name].extend(field_value)
                             else:
                                 bundle.data[field.name].append(field_value)
+
+        # mark records that has status INPROCESS as LILACSEXPRESS #859
+        if bundle.obj.status == 0:
+            if 'database' in bundle.data:
+                bundle.data['database'].append('LILACSEXPRESS')
+            else:
+                bundle.data['database'] = 'LILACSEXPRESS'
 
 
         return bundle

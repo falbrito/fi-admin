@@ -6,11 +6,18 @@
 {% block title %}{% trans "Thesaurus" %} | {{ block.super }}{% endblock %}
 
 {% block breadcrumb %}
-    {% if object %}
-        <li><a href="{% url 'list_qualifier' %}?ths={% if request.GET.ths %}{{ request.GET.ths }}{% else %}{{ actions.choiced_thesaurus }}{% endif %}">{% trans "Thesaurus" %}</a>
-        <span class="divider">/</span></li>
-        <li>{% trans "Edit Register" %}</li>
-    {% endif %}
+    <li>
+        <a href="{% url 'list_qualifier' %}?ths={% if request.GET.ths %}{{ request.GET.ths }}{% else %}{{ actions.choiced_thesaurus }}{% endif %}">
+            {% trans "Thesaurus" %}
+            {% if choiced_thesaurus_name %}
+                {% for obj in choiced_thesaurus_name %}
+                    {{ obj.thesaurus_name }}
+                {% endfor %}
+            {% endif %}
+        </a>
+        <span class="divider">/</span>
+    </li>
+    <li>{% trans "Edit Register" %}</li>
 {% endblock %}
 
 {% block content %}
@@ -70,11 +77,13 @@
                         <table class="identifierqualif">
                             <tr>
                                 <td>{{ form.qualifier_ui.label }}:</td>
-                                <td>{{ form.decs_code.label }}</td>
+                                <td>{{ form.decs_code.label }}:</td>
                                 <td>{{ form.external_code.label }}:</td>
                             </tr>
                             <tr>
-                                <td>{{ form.qualifier_ui }}</td>
+                                <td>
+                                    <input type="text" id="id_qualifier_ui" name="qualifier_ui" value="{% if form.qualifier_ui.value %}{{ form.qualifier_ui.value }}{% endif %}" readonly="True">
+                                </td>
                                 <td>
                                     <input type="text" id="id_decs_code" name="decs_code" value="{% if form.decs_code.value %}{{ form.decs_code.value }}{% endif %}" readonly="True">
                                 </td>
@@ -98,11 +107,11 @@
                             </tr>
                             <tr>
                                 <td colspan=3>
-                                    {{ form.abbreviation.label }}:
+                                    {{ form.abbreviation.label }}:<span class="mark">*</span>
                                 </td>
                             </tr>
                             <tr>
-                                <td colspan=3>
+                                <td colspan=3 class=abbrev>
                                     {{ form.abbreviation }}
                                 </td>
                             </tr>
@@ -114,11 +123,11 @@
                 <!-- treenumberslistdesc -->
                 <div class="accordion-group">
                     <div class="accordion-heading">
-                        <a class="accordion-toggle" data-toggle="collapse" data-target="#treenumberslistdesc">{% trans "Tree Numbers List" %}</a>
+                        <a class="accordion-toggle" data-toggle="collapse" data-target="#treenumber">{% trans "Tree Numbers List" %}</a>
                     </div>
 
                     <ul>
-                        <fieldset id="treenumberslistdesc">
+                        <fieldset id="treenumber">
 
                             <table>
                                 <tr>
@@ -131,7 +140,7 @@
                                     {% for hidden in form.hidden_fields %}
                                         {{ hidden }}
                                     {% endfor %}
-                                    <tr id="treenumber-{{ forloop.counter0 }}" class="previous-row{% if form.errors %} error{% endif %} formset-row">
+                                    <tr id="treenumber-{{ forloop.counter0 }}" class="treenumber previous-row{% if form.errors %} error{% endif %} formset-row">
                                         {% for field in form.visible_fields %}
                                         <td>
                                             {{ field }}
@@ -175,8 +184,8 @@
                                     <a class="accordion-toggle" data-toggle="collapse" data-target="#descriptionqualif_{{ form.instance.pk }}">
                                         <font size="2">
                                             {% if form.instance.pk %}
-                                                <font color="#333">
-                                                <b>Description in: {{ form.language_code.value }}</b>
+                                                <font color="#08c">
+                                                <b>{% trans 'Description in' %}: {{ form.language_code.value }}</b>
                                                 </font>
                                             {% else %}
                                                 <br><i class='icon-file'></i>&nbsp;{% trans 'Add new description' %}
@@ -186,6 +195,13 @@
                                 </table>
 
                                 <div id="descriptionqualif_{{ form.instance.pk }}" class="{% if not form.errors %} panel-collapse collapse {% else %} error {% endif %}">
+                                    <table width="98%">
+                                        <tr>
+                                            <td align="right" bgcolor="#F2F2F2">
+                                                {% if form.instance.pk %}{% trans 'Delete' %}?{{ form.DELETE }}{% endif %}
+                                            </td>
+                                        </tr>
+                                    </table>
                                     <table class="descriptionqualif">
                                         <tr>
                                             <td>
@@ -219,7 +235,7 @@
                 </div>
 
                 <div class="control-panel form-submit">
-                    <button class="btn btn-large btn-danger" onclick="window.history.go(-1); return false;">{% trans "Cancel" %}</button>
+                    <a href="{% url 'list_qualifier' %}?ths={% if request.GET.ths %}{{ request.GET.ths }}{% else %}{{ actions.choiced_thesaurus }}{% endif %}" class="btn btn-large btn-danger">{% trans "Cancel" %}</a>
                     <button class="btn btn-primary btn-large">{% trans "Save" %}</button>
                 </div>
 
@@ -305,35 +321,6 @@
                     prefix: '{{ formset_treenumber.prefix }}'
             });
 
-
-            $('[id^="id_treenumberslistdesc_set-"]').on('blur', function() {
-                val = $(this).val();
-                $(this).val(val.replace(/\s/g, ''));
-
-                tam = val.length;
-                // alert(tam);
-                if( tam % 2 !== 0 ){
-                    // É impar
-                    // alert("Impar "+tam);
-                    // Verifica quantidade de pontos
-                    qtd_pontos = ((tam + 1) / 4) - 1;
-                    // alert('Numero de pontos:'+qtd_pontos);
-                    if ( !( (parseFloat(qtd_pontos) == parseInt(qtd_pontos)) && !isNaN(qtd_pontos) ) ) {
-                        // alert("Não é inteiro"+qtd_pontos)
-                        alert('{% trans "Warning" %}: '+$(this).val());
-                        return false
-                    } else {
-                        $(this).val;
-                    }
-
-                } else {
-                    // se eh par está errado
-                    if ( tam != 0 ){
-                        alert('{% trans "Warning" %}: '+$(this).val());
-                        return false
-                    }
-                }
-            });
 
             $('[id$="-DELETE"]').on('click', function() {
                 val = $(this).val();

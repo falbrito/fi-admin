@@ -134,7 +134,9 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.locale.LocaleMiddleware',
     # Uncomment for Debug Toolbar
-    # 'debug_toolbar.middleware.DebugToolbarMiddleware',
+    #'debug_toolbar.middleware.DebugToolbarMiddleware',
+    #'fi-admin.settings.NonHtmlDebugToolbarMiddleware',
+
     # Uncomment the next line for simple clickjacking protection:
     # 'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
@@ -235,6 +237,13 @@ HAYSTACK_CONNECTIONS = {
     },
 }
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'unique-snowflake',
+    }
+}
+
 # Haystack signal for automatic update of Solr index when the model is saved/updated
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
@@ -253,7 +262,7 @@ AUTHENTICATION_BACKENDS = (
     'biremelogin.authenticate.EmailModelBackend',
 )
 
-BIREMELOGIN_BASE_URL = "http://accounts.bireme.org"
+BIREMELOGIN_BASE_URL = "https://accounts.bireme.org"
 SITE_URL = ""
 BIREMELOGIN_SERVICE = ""
 GOOGLE_ANALYTICS_ID = ""
@@ -261,6 +270,7 @@ VIEW_DOCUMENTS_BASE_URL = ""
 DEDUP_SERVICE_URL = ""
 VIEW_DEDUP_ARTICLE_DETAIL = ""
 DEDUP_PUT_URL = ""
+GOOGLE_MAPS_APIKEY = ""
 
 TINYMCE_JS_URL = "/static/js/tinymce/tinymce.min.js"
 
@@ -296,6 +306,9 @@ MAX_UPLOAD_SIZE = "73400320" #70MB
 DEBUG_TOOLBAR = False
 DEBUG_TOOLBAR_PATCH_SETTINGS = False
 INTERNAL_IPS = ('127.0.0.1',)
+
+# Enable/disable MySQL fulltext search
+FULLTEXT_SEARCH=False
 
 try:
     from settings_local import *

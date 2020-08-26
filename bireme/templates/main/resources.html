@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block title %}{% trans "Resources" %} | {{ block.super }}{% endblock %}
+{% block title %}{% trans "Internet resources" %} | {{ block.super }}{% endblock %}
 
 {% block breadcrumb %}
-    <li>{% trans "Resources" %}</li>
+    <li>{% trans "Internet resources" %}</li>
 {% endblock %}
 
 
@@ -19,7 +19,7 @@
 
 <!--  header -->
 <div class='header'>
-    <h2><i class='icon-star'></i> {% trans "Resources" %}</h2>
+    <h2><i class='icon-star'></i> {% trans "Internet resources" %}</h2>
         <div class='pull-right'>
             <a href="{% url 'main.views.create_edit_resource' %}" class='btn btn-primary'><i class='icon-file'></i> {% trans "New Resource" %}</a>
         </div>
@@ -50,7 +50,7 @@
                    <span class="badge badge-info">{{ pagination.paginator.count }}</span>
                {% endif %}
             </a>
-        </li>        
+        </li>
     </ul>
 
     <div class="tab-content">
@@ -60,15 +60,15 @@
                     <div class="input-append" style="margin-left: 10px">
                         <form name="search">
                             <input type="hidden" name="page" value="">
-                            
+
                             {% if actions.filter_owner == '*' %}
                                 <input type="hidden" name="filter_owner" value="*"/>
                             {% elif actions.filter_owner == 'network' %}
                                 <input type="hidden" name="filter_owner" value="network"/>
                             {% endif %}
-                            <input type='text' name="s"  value="{{ actions.s }}" placeholder="{% trans "Search" %}">&nbsp;
-                         
-                            {% trans "Status" %}: 
+                            <input class="searchbox" type='text' name="s"  value="{{ actions.s }}" placeholder="{% trans "Search" %}">&nbsp;
+
+                            {% trans "Status" %}:
                             <select name="filter_status">
                                 <option value="">{% trans "All" %}</option>
                                 <option value="0" {% if actions.filter_status == '0' %}selected="true"{% endif %}>{% trans "Pending" %}</option>
@@ -76,7 +76,7 @@
                                 <option value="2" {% if actions.filter_status == '2' %}selected="true"{% endif %}>{% trans "Refused" %}</option>
                                 <option value="3" {% if actions.filter_status == '3' %}selected="true"{% endif %}>{% trans "Deleted" %}</option>
                             </select>
-                            {% trans "Thematic area" %}: 
+                            {% trans "Thematic area" %}:
                             <select name="filter_thematic">
                                 <option value="">{% trans "All" %}</option>
                                 {% for thematic in thematic_list %}
@@ -87,12 +87,13 @@
                             <button class="btn" type="submit"><i class='icon-search'></i></button>
                         </form>
                     </div>
+
                 </div>
                 {% if actions.filter_owner == 'network' and user_data.networks %}
                     <div class="span-4">
                         {% trans "Networks" %} : {{ user_data.networks|join:", " }}
                     </div>
-                {% endif %}                
+                {% endif %}
             </div>
 
             <table class='table'>
@@ -108,8 +109,8 @@
                     {% for resource in resources %}
                         <tr>
                             <td><a href="{% url 'main.views.create_edit_resource' resource.id %}">{{ resource.id }}</a></td>
-                            <td><span title="{{ resource.title }}">{{ resource.title|slice:"50" }}{% if resource.title|length > 50 %}...{% endif %}</span></td>
-                            <td><span title="{{ resource.link }}">{{ resource.link|slice:"50" }}{% if resource.link|length > 50 %}...{% endif %}</span></td>
+                            <td><span title="{{ resource.title }}">{{ resource.title|slice:"130" }}{% if resource.title|length > 130 %}...{% endif %}</span></td>
+                            <td><span title="{{ resource.link }}">{{ resource.link|slice:"80" }}{% if resource.link|length > 80 %}...{% endif %}</span></td>
                             <td>
                                 {{ resource.updated_time|date:"d/m/y" }}
                             </td>
@@ -136,6 +137,25 @@
             </table>
 
             {% include "pagination.html" %}
+
+            {% if pagination.paginator.num_pages > 1 %}
+            <div class="pagination input-append">
+                <form>
+                    {% if actions.filter_owner == '*' %}
+                        <input type="hidden" name="filter_owner" value="*"/>
+                    {% elif actions.filter_owner == 'network' %}
+                        <input type="hidden" name="filter_owner" value="network"/>
+                    {% endif %}
+                    <input type="hidden" name="filter_status" value="{{ actions.filter_status }}">
+                    <input type="hidden" name="filter_thematic" value="{{ actions.filter_thematic }}">
+                    <input type="hidden" name="s" value="{{ actions.s }}">
+
+                    {% trans "Go to page" %}:&nbsp;
+                    <input type="text" name="page" value="{{ actions.page }}" class="span1">
+                    <button class="btn btn-primary" type="submit"><i class='icon-ok'></i></button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
 

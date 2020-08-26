@@ -461,6 +461,65 @@ div.onlineresource div.check {
     margin: 18px 0;
 }
 
+#issues input {
+    width: 65px;
+}
+
+#issues select {
+    width: auto;
+}
+
+#issues a.add-button {
+    display: none;
+}
+
+#issues .table thead th,
+#issues .table tbody td {
+    text-align: center;
+}
+
+#issues .table tbody td:last-child {
+    vertical-align: middle;
+}
+
+#issues .table tbody tr td p {
+    margin: 0;
+}
+
+#issues table tbody tr:not(.active):nth-last-child(1) {
+   display: none;
+}
+
+.preview #tab-issues {
+    display: none;
+}
+
+.preview #issues .table tbody tr td:nth-last-of-type(-n+2) {
+    text-align: left;
+}
+
+#collection textarea {
+    width: auto;
+}
+
+.icon-m {
+    font-size: 24px;
+}
+
+.icon-blue {
+    color: #08c;
+}
+
+.icon-red {
+    color: #ff0000;
+}
+
+.add-btn,
+.delete-btn {
+    margin-bottom: 5px;
+    display: block;
+}
+
 .tab-content #indexrange .table thead th,
 .tab-content #variance .table thead th,
 .tab-content #audit .table thead th {
@@ -586,7 +645,7 @@ tr.relation-row td input, tr.relation-row td select{
 /* Horizontal filter */
 .stacked{
   display: flex;
-  width: 100%; 
+  width: 100%;
 /*  border: solid 1px red*/
 }
 
@@ -599,7 +658,7 @@ tr.relation-row td input, tr.relation-row td select{
 }
 
 /* left column - DIV*/
-.selector-available { 
+.selector-available {
     width: 245px;
 }
 
@@ -642,6 +701,12 @@ tr.relation-row td input, tr.relation-row td select{
     text-align: left;
     padding: 2px;
 }
+
+.abbrev input[type="text"] {
+    text-transform: uppercase;
+    width: 50px;
+}
+
 
 
 .descriptiondesc, .conceptlistdesc, .termlistdesc, .descriptionqualif, .conceptlistqualif, .termlistqualif {
@@ -714,6 +779,11 @@ tr.relation-row td input, tr.relation-row td select{
 }
 
 
+.treenumber input[type="text"] {
+    text-transform: uppercase;
+    width: 600px;
+}
+
 /*conceptlistdesc*/
 .casn1 textarea {
     width: 98%;
@@ -734,7 +804,18 @@ tr.relation-row td input, tr.relation-row td select{
     color: #08c;
 }
 
+.cursor-copy{
+    cursor: copy;
+}
 
+.decs_suggestion{
+    margin: -52px 0 40px 190px;
+}
+.decs_suggestion a{
+    color: #ffff;
+    padding: 7px 10px 7px;
+}
 
-
-
+.searchbox{
+    width: 350px;
+}

@@ -10,7 +10,9 @@ if v6 = 'I' AND left(v607,3) <> 'BRI' AND left(v607,3) <> 'BRE' then,
        c4,'"model": ','"institution.institution",',/
 
        c4,'"fields": {',/
-            c8,'"status": 1,',/
+            c8,'"status": ',
+            if v604:'FECHADO' then '3' else, if v604:'INATIVO' then '2' else '1' fi,fi,','/
+
             if p(v607) then c8,'"cc_code": "',v607,'",'/, fi,
 
             if p(v611) then,
@@ -23,8 +25,8 @@ if v6 = 'I' AND left(v607,3) <> 'BRI' AND left(v607,3) <> 'BRE' then,
 
             if p(v615) then c8,'"address": "',v615,'",'/, fi,
             if p(v616^a) then c8,'"mailbox": "',v616^a,'",'/, fi,
-            if p(v616^b) then c8,'"zipcode": "',v616^b,'",'/, fi,
             if p(v617^a) then c8,'"city": "',v617^a,'",'/, fi,
+            if p(v617^b) then c8,'"zipcode": "',v617^b,'",'/, fi,
             if p(v618^a) then c8,'"state": "',v618^a,'",'/, fi,
             if p(v620^a) and val(v620^a) > 0 then c8,'"country": ',f(val(v620^a),1,0),','/, fi,
 
@@ -35,12 +37,12 @@ if v6 = 'I' AND left(v607,3) <> 'BRI' AND left(v607,3) <> 'BRE' then,
        c4,'}',/
     '},'/
 
-    /* responsável */
+    /* contacts (concatenation of person, email and phone) */
     if p(v610) then,
         '{',/
 
             c4,'"pk": null,'/
-            c4,'"model": ','"institution.contactperson",'/
+            c4,'"model": ','"institution.contact",'/
 
             c4,'"fields": {',/
                 c8,'"institution": ',f(mfn+val(v9995),1,0),','/
@@ -50,30 +52,11 @@ if v6 = 'I' AND left(v607,3) <> 'BRI' AND left(v607,3) <> 'BRE' then,
             c4,'}',/
          '},'/
     fi,
-
-
-    /* telefones */
-    if p(v621^*) then,
-        '{',/
-
-            c4,'"pk": null,'/
-            c4,'"model": ','"institution.contactphone",'/
-
-            c4,'"fields": {',/
-                c8,'"institution": ',f(mfn+val(v9995),1,0),','/
-                c8,'"phone_number": "',v621^*,'",'/,
-                c8,'"phone_type": "main",'/,
-                c8,'"phone_name": "Geral"'/,
-            c4,'}',/
-         '},'/
-    fi,
-
-    /* emails */
     if p(v624) then,
         (
           '{',/
             c4,'"pk": null,'/
-            c4,'"model": ','"institution.contactemail",'/
+            c4,'"model": ','"institution.contact",'/
 
             c4,'"fields": {',/
                 c8,'"institution": ',f(mfn+val(v9995),1,0),','/
@@ -82,6 +65,19 @@ if v6 = 'I' AND left(v607,3) <> 'BRI' AND left(v607,3) <> 'BRE' then,
          '},'/
         ),
     fi,
+    if p(v621^*) then,
+        '{',/
+            c4,'"pk": null,'/
+            c4,'"model": ','"institution.contact",'/
+
+            c4,'"fields": {',/
+                c8,'"institution": ',f(mfn+val(v9995),1,0),','/
+                c8,'"country_area_code": "',v625,'",'/,
+                c8,'"phone_number": "',v621^*,'"'/,
+            c4,'}',/
+         '},'/
+    fi,
+
 
     /* site */
     if p(v694) then,
@@ -100,14 +96,20 @@ if v6 = 'I' AND left(v607,3) <> 'BRI' AND left(v607,3) <> 'BRE' then,
     fi,
 
     /* ADM */
+    /* gera variaveis com IDs das tabelas controladas de categoria e tipos */
+    proc('d6603',(ref(['nmail_cat_list']l(['nmail_cat_list']v603),'a6603|',v2,'|')),),
+    proc('d6604',(ref(['nmail_user_list']l(['nmail_user_list']v604),'a6604|',v2,'|')),),
+
     '{',/
         c4,'"pk": null,'/
         c4,'"model": ','"institution.adm",'/
 
         c4,'"fields": {',/
             c8,'"institution": ',f(mfn+val(v9995),1,0),','/
-            c8,'"category": "',(v603+|\r\n|), '",'/,
-            c8,'"type": "',(v604+|\r\n|),'",'/,
+            c8,'"category_history": "',(v603+|\r\n|), '",'/,
+            c8,'"category": [',(if val(v6603) > 0 then, if iocc > 1 then ', ' fi, v6603 fi),'],',/, 
+            c8,'"type_history": "',(v604+|\r\n|),'",'/,
+            c8,'"type": [',(if val(v6604) > 0 then, if iocc > 1 then ', ' fi, v6604 fi),'],',/, 
             c8,'"notes": "',(replace(v699,'^a', '\r\n\r\n^a'),'\r\n'),'"'/,
         c4,'}',/
     '},'/

@@ -29,9 +29,9 @@ DESCRIPTOR_CLASS_CODE=(
 
 
 RELATION_NAME_OPTION=(
-    ('NRW','NRW - Narrower'),
-    ('BRD','BRD - Broader'),
-    ('REL','REL - Related but not broader or narrower'),
+    ('NRW',_("NRW - Narrower")),
+    ('BRD',_("BRD - Broader")),
+    ('REL',_("REL - Related but not broader or narrower")),
 )
 
 
@@ -49,9 +49,11 @@ LEXICALTAG_OPTION=(
 
 
 STATUS_CHOICES=(
+    # (-3, _('Migration')),
     (-1, _('Draft')),
     (1, _('Published')),
-    # (3, _('Deleted')),
+    (3, _('Deleted')),
     (5, _('Historical')),
+    (10, _('Awaiting translation')),
 )
 

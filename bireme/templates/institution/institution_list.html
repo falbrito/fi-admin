@@ -21,9 +21,11 @@
 <!--  header -->
 <div class='header'>
     <h2><i class='icon-file'></i> {% trans "Institution" %}</h2>
+    {% if user_cc == 'BR1.1' %}
         <div class='pull-right'>
             <a href="{% url 'create_institution' %}" class='btn btn-primary'><i class='icon-file'></i> {% trans "New Institution" %}</a>
         </div>
+    {% endif %}
 </div>
 
 <div class='body'>
@@ -36,18 +38,21 @@
             {% endif %}
             </a>
         </li>
-        <li class="{% if actions.filter_owner == '*' %}active{% endif %}">
-            <a href="#tab-network" onclick="filter_owner('*')" data-toggle="tab">
-                <strong>{% trans "All instutions" %}</strong>
-               {% if  actions.filter_owner == '*' %}
-                   <span class="badge badge-info">{{ paginator.count }}</span>
-               {% endif %}
-            </a>
-        </li>
+        {% if user_cc == 'BR1.1' %}
+            <li class="{% if actions.filter_owner == '*' %}active{% endif %}">
+                <a href="#tab-network" onclick="filter_owner('*')" data-toggle="tab">
+                    <strong>{% trans "All instutions" %}</strong>
+                   {% if  actions.filter_owner == '*' %}
+                       <span class="badge badge-info">{{ paginator.count }}</span>
+                   {% endif %}
+                </a>
+            </li>
+        {% endif %}
     </ul>
 
     <div class="tab-content">
         <div class="tab-pane active">
+            {% if user_cc == 'BR1.1' and actions.filter_owner == '*' %}
             <div class="row">
                 <div class="span-4">
                     <div class="input-append" style="margin-left: 10px">
@@ -64,23 +69,49 @@
                             {% trans "Status" %}:
                             <select name="filter_status">
                                 <option value="">{% trans "All" %}</option>
-                                <option value="0" {% if actions.filter_status == '0' %}selected="true"{% endif %}>{% trans "Pending" %}</option>
-                                <option value="1" {% if actions.filter_status == '1' %}selected="true"{% endif %}>{% trans "Admitted" %}</option>
-                                <option value="2" {% if actions.filter_status == '2' %}selected="true"{% endif %}>{% trans "Refused" %}</option>
-                                <option value="3" {% if actions.filter_status == '3' %}selected="true"{% endif %}>{% trans "Deleted" %}</option>
+                                <option value="1" {% if actions.filter_status == '1' %}selected="true"{% endif %}>{% trans "Active" %}</option>
+                                <option value="2" {% if actions.filter_status == '2' %}selected="true"{% endif %}>{% trans "Inactive" %}</option>
+                                <option value="3" {% if actions.filter_status == '3' %}selected="true"{% endif %}>{% trans "Closed" %}</option>
                             </select>
+
+                            {% trans "Type" %}:
+                            <select name="filter_type">
+                                <option value="">{% trans "All" %}</option>
+                                {% for type in type_list %}
+                                    <option value="{{type.id}}" {% if actions.filter_type == type.id|slugify %}selected="true"{% endif %}>{{type}}</option>
+                                {% endfor %}
+                            </select>
+
+                            {% trans "Category" %}:
+                            <select name="filter_category">
+                                <option value="">{% trans "All" %}</option>
+                                {% for category in category_list %}
+                                    <option value="{{category.id}}" {% if actions.filter_category == category.id|slugify %}selected="true"{% endif %}>{{category}}</option>
+                                {% endfor %}
+                            </select>
+
+                            {% trans "Country" %}:
+                            <select name="filter_country">
+                                <option value="">{% trans "All" %}</option>
+                                {% for country in country_list %}
+                                    <option value="{{country.0}}" {% if actions.filter_country == country.0|slugify %}selected="true"{% endif %}>{{ country.1 }}</option>
+                                {% endfor %}
+                            </select>
+
                             <button class="btn" type="submit"><i class='icon-search'></i></button>
                         </form>
                     </div>
                 </div>
             </div>
+            {% endif %}
 
             <table class='table'>
                 <thead>
-                    <th><a href="javascript:orderby('id');" id="id_id">#</a></th>
-                    <th><a href="javascript:orderby('title');" id="id_cc">{% trans "CC" %}</a></th>
-                    <th><a href="javascript:orderby('title');" id="id_title">{% trans "Name" %}</a></th>
-                    <th><a href="javascript:orderby('status');" id="id_status">{% trans "Status" %}</a></th>
+                    <th><a href="#" id="id_id">#</a></th>
+                    <th><a href="#" id="id_cc">{% trans "CC" %}</a></th>
+                    <th><a href="#" id="id_title">{% trans "Name" %}</a></th>
+                    <th><a href="#" id="id_country">{% trans "Country" %}</a></th>
+                    <th><a href="#" id="id_status">{% trans "Status" %}</a></th>
                     <th>{% trans "Actions" %}</th>
                 </thead>
                 <tbody>
@@ -90,15 +121,14 @@
                             <td>{{ institution.cc_code }}</a></td>
                             <td>
                                 <span title="{{ institution }}">
-                                    {{ institution|slice:"90" }}
-                                    {% if institution.has_unit %}
-                                        - {{ institution.units|join:" - " }}
-                                    {% endif %}
-                                    {% if institution|length > 90 %}...{% endif %}</span></td>
+                                    {{ institution.display_name_with_units }}
+                                </span>
+                            </td>
+                            <td>{{ institution.country }}</a></td>
                             <td>{{ institution.status_label }}</a></td>
                             <td>
                                 <a href="{% url 'edit_institution' institution.id %}" class='btn btn-mini'><i class='icon-pencil'></i></a>
-                                {% if institution.created_by_id = user.id %}
+                                {% if user_cc = 'BR1.1' %}
                                     <a href="{% url 'delete_institution' institution.id  %}" class='btn btn-mini' title="{% trans 'Remove' %}"><i class='icon-remove'></i></a>
                                 {% endif %}
                             </td>

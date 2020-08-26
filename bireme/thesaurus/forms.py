@@ -29,15 +29,23 @@ class ThesaurusForm(forms.ModelForm):
 # Register - Form1
 class IdentifierQualifForm(forms.ModelForm):
     date_created = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date created"), required=False)
     date_revised = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date revised"), required=False)
     date_established = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date established"), required=False)
 
     class Meta:
         model = IdentifierQualif
         fields = '__all__'
+
+    def clean_abbreviation(self):
+        data = self.cleaned_data.get('abbreviation')
+        # Force that is uppercase
+        upper_data = data.upper()
+        data = upper_data
+        return data
+
 
 class DescriptionQualifForm(forms.ModelForm):
     class Meta:
@@ -55,11 +63,57 @@ class TreeNumbersListQualifForm(forms.ModelForm):
         model = TreeNumbersListQualif
         fields = '__all__'
 
-        error_messages = {
-            NON_FIELD_ERRORS: {
-                'unique_together': "%(field_labels)s already exist.",
-            }
-        }
+    class Meta:
+        model = TreeNumbersListQualif
+        fields = '__all__'
+
+    def clean_tree_number(self):
+        data = self.cleaned_data
+        exist_err=False
+        tree_number = data.get('tree_number')
+        identifier_id = data.get('identifier')
+
+        # Checks for proper character and formatting
+        tam = len(tree_number)
+        # Can never be a even number size
+        if int(tam) % 2 == 0:
+            # print 'Par'
+            message = _("Format")
+            exist_err=True
+        else:
+            # If it is ODD it will check the number of existing points
+            qtd_pontos_esperado = ((tam + 1) / 4) - 1
+            tponto = 0
+            for letra in tree_number:
+                if letra == '.':
+                    tponto = tponto + 1
+
+            if qtd_pontos_esperado != tponto:
+                message = _("Format")
+                exist_err=True
+
+        # Checks if the first character is a letter
+        position_1=tree_number[0:1]
+        if position_1.isdigit() is not False:
+                message = _("Format")
+                exist_err=True
+
+        # Checks if the third character is a digit
+        position_3=tree_number[2:3]
+        if position_3.isdigit() is False:
+                message = _("Format")
+                exist_err=True
+
+        # If any error returns message
+        if exist_err:
+            self.add_error('tree_number', message)            
+
+        # Force that is uppercase
+        upper_data = tree_number.upper()
+        data = upper_data
+
+        return data
+
 
 # Concept + Term - Form2
 class IdentifierConceptListQualifForm(forms.ModelForm):
@@ -68,15 +122,19 @@ class IdentifierConceptListQualifForm(forms.ModelForm):
         fields = '__all__'
 
 class ConceptListQualifForm(forms.ModelForm):
+    scope_note =  forms.CharField(
+        max_length = 5000,
+        widget = forms.Textarea
+    )
     class Meta:
         model = ConceptListQualif
         fields = '__all__'
 
 class TermListQualifForm(forms.ModelForm):
     date_created = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date created"), required=False)
     date_altered = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date altered"), required=False)
 
     class Meta:
         model = TermListQualif
@@ -89,9 +147,9 @@ class TermListQualifUniqueForm(forms.ModelForm):
         exclude = ('identifier',)
 
     date_created = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date created"), required=False)
     date_altered = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date altered"), required=False)
 
 
 class legacyInformationQualifForm(forms.ModelForm):
@@ -111,11 +169,11 @@ class IdentifierDescForm(forms.ModelForm):
         fields = '__all__'
 
     date_created = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date created"), required=False)
     date_revised = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date revised"), required=False)
     date_established = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date established"), required=False)
 
     # Utilizado para pre filtrar abbreviation com registros especificos do tesauro escolhido
     def __init__(self, *args, **kwargs):
@@ -137,14 +195,57 @@ class DescriptionDescForm(forms.ModelForm):
 
 
 class TreeNumbersListDescForm(forms.ModelForm):
+
     class Meta:
+        model = TreeNumbersListDesc
         fields = '__all__'
 
-        error_messages = {
-            NON_FIELD_ERRORS: {
-                'unique_together': "%(field_labels)s already exist.",
-            }
-        }
+    def clean_tree_number(self):
+        data = self.cleaned_data
+        exist_err=False
+        tree_number = data.get('tree_number')
+        identifier_id = data.get('identifier')
+
+        # Checks for proper character and formatting
+        tam = len(tree_number)
+        # Can never be a even number size
+        if int(tam) % 2 == 0:
+            # print 'Par'
+            message = _("Format")
+            exist_err=True
+        else:
+            # If it is ODD it will check the number of existing points
+            qtd_pontos_esperado = ((tam + 1) / 4) - 1
+            tponto = 0
+            for letra in tree_number:
+                if letra == '.':
+                    tponto = tponto + 1
+
+            if qtd_pontos_esperado != tponto:
+                message = _("Format")
+                exist_err=True
+
+        # Checks if the first character is a letter
+        position_1=tree_number[0:1]
+        if position_1.isdigit() is not False:
+                message = _("Format")
+                exist_err=True
+
+        # Checks if the third character is a digit
+        position_3=tree_number[2:3]
+        if position_3.isdigit() is False:
+                message = _("Format")
+                exist_err=True
+
+        # If any error returns message
+        if exist_err:
+            self.add_error('tree_number', message)            
+
+        # Force that is uppercase
+        upper_data = tree_number.upper()
+        data = upper_data
+
+        return data
 
 
 class PharmacologicalActionListDescForm(forms.ModelForm):
@@ -188,6 +289,17 @@ class legacyInformationDescForm(forms.ModelForm):
             }
         }
 
+class EntryCombinationListDescForm(forms.ModelForm):
+    class Meta:
+        fields = '__all__'
+
+        error_messages = {
+            NON_FIELD_ERRORS: {
+                'unique_together': "%(field_labels)s already exist.",
+            }
+        }
+
+
 
 
 # Concept + Term - Form2
@@ -197,19 +309,25 @@ class IdentifierConceptListDescForm(forms.ModelForm):
         fields = '__all__'
 
 class ConceptListDescForm(forms.ModelForm):
+    scope_note =  forms.CharField(
+        max_length = 5000,
+        widget = forms.Textarea
+    )
     class Meta:
         Model = ConceptListDesc
         fields = '__all__'
 
 class TermListDescForm(forms.ModelForm):
     date_created = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date created"), required=False)
     date_altered = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date altered"), required=False)
 
     class Meta:
         Model = TermListDesc
         fields = '__all__'
+
+
 
 
 # Processos a parte
@@ -219,9 +337,17 @@ class TermListDescUniqueForm(forms.ModelForm):
         exclude = ('identifier',)
 
     date_created = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date created"), required=False)
     date_altered = forms.DateField(widget=forms.DateInput(format = '%d/%m/%Y'),
-                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', required=False)
+                                    input_formats=('%d/%m/%Y',), help_text='DD/MM/YYYY', label=_("Date altered"), required=False)
+
+class TheraurusOccurrenceListDescForm(forms.ModelForm):
+    class Meta:
+        model = TheraurusOccurrenceListDesc
+        fields = '__all__'
+
+
+
 
 
 class legacyInformationDescForm(forms.ModelForm):
@@ -286,6 +412,15 @@ legacyInformationDescFormSet = inlineformset_factory(
     extra=1
     )
 
+EntryCombinationListDescFormSet = inlineformset_factory(
+    IdentifierDesc,
+    EntryCombinationListDesc,
+    form=EntryCombinationListDescForm,
+    fields='__all__',
+    can_delete=True,
+    extra=1
+    )
+
 
 
 # Concept + Term - Form2
@@ -306,6 +441,20 @@ TermListDescFormSet = inlineformset_factory(
     can_delete=True,
     extra=1
     )
+
+
+# This form works with the form TermListDescForm
+TheraurusOccurrenceListDescFormSet = inlineformset_factory(
+    TermListDesc,
+    TheraurusOccurrenceListDesc,
+    form=TheraurusOccurrenceListDescForm,
+    fields='__all__',
+    can_delete=True,
+    extra=1
+    )
+
+
+
 
 # Qualifiers ------------------------------------------------------------------
 # Register - Form1

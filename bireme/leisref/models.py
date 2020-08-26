@@ -1,11 +1,13 @@
 #! coding: utf-8
 from django.utils.translation import ugettext_lazy as _, get_language
+from django.contrib.contenttypes.generic import GenericRelation
 from django.db import models
 
 from utils.models import Generic
 from main.choices import LANGUAGES_CHOICES
 from main.models import SourceLanguage
 from log.models import AuditLog
+from classification.models import Relationship
 from django.template.defaultfilters import date as _date
 from utils.validators import valid_min_year
 
@@ -492,6 +494,10 @@ class Act(Generic, AuditLog):
     # responsible cooperative center
     cooperative_center_code = models.CharField(_('Cooperative center'), max_length=55, blank=True)
 
+    # classification
+    collection = GenericRelation(Relationship)
+
+
     def status_label(self):
         status_dict = dict(STATUS_CHOICES)
         return status_dict.get(self.status)
@@ -502,9 +508,9 @@ class Act(Generic, AuditLog):
         else:
             if self.issue_date:
                 act_date = _date(self.issue_date, "d \d\e F \d\e Y")
-                act_title = u"{0} {1}, de {2}".format(self.act_type, self.act_number, act_date)
+                act_title = u"{0} Nº {1} - {2}".format(self.act_type, self.act_number, act_date)
             else:
-                act_title = u"{0} {1}".format(self.act_type, self.act_number)
+                act_title = u"{0} Nº {1}".format(self.act_type, self.act_number)
 
         return act_title
 

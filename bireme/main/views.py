@@ -1,7 +1,7 @@
 #! coding: utf-8
 from django.shortcuts import redirect, render_to_response, get_object_or_404
 from django.core.urlresolvers import reverse
-from django.core.paginator import Paginator
+from django.core.paginator import Paginator, EmptyPage
 
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth import forms as auth_forms
@@ -26,12 +26,13 @@ from suggest.models import *
 from help.models import get_help_fields
 from forms import *
 from error_reporting.forms import ErrorReportForm
+from decorators import *
 
 import mimetypes
 
 import os
-
-from decorators import *
+import json
+import requests
 
 ############ Resources (LIS) #############
 
@@ -41,6 +42,8 @@ def list_resources(request):
     user = request.user
     output = {}
     delete_id = request.POST.get('delete_id')
+    # save current url for preserve filters after edit
+    request.session["filtered_list"] = request.get_full_path()
 
     if delete_id:
         delete_resource(request, delete_id)
@@ -57,10 +60,32 @@ def list_resources(request):
     if actions['page'] and actions['page'] != '':
         page = actions['page']
 
-    if actions['s'].isdigit():
-        resources = Resource.objects.filter( pk=int(actions['s']) )
+    # check if user has perform a search
+    search = actions['s']
+    if search:
+        # search by id
+        if search.isdigit():
+            resources = Resource.objects.filter(pk=int(search))
+        # search by field
+        elif ":" in search:
+            search_parts = actions["s"].split(":")
+            search_field = search_parts[0] + "__icontains"
+            search = search_parts[1]
+            resources = Resource.objects.filter(**{search_field: search})
+        # free search
+        else:
+            search_method = 'search' if settings.FULLTEXT_SEARCH else 'icontains'
+            search_field1 = 'title__' + search_method
+            search_field2 = 'link__' + search_method
+
+            if settings.FULLTEXT_SEARCH:
+                # search using boolean AND
+                search = u"+{}".format(search.replace(' ', ' +'))
+
+            resources = Resource.objects.filter( Q(**{search_field1: search}) | Q(**{search_field2: search}))
     else:
-        resources = Resource.objects.filter( Q(title__icontains=actions['s']) | Q(link__icontains=actions['s']) )
+        resources = Resource.objects.all()
+
 
     if actions['filter_status'] != '':
         resources = resources.filter(status=actions['filter_status'])
@@ -90,7 +115,12 @@ def list_resources(request):
     pagination = {}
     paginator = Paginator(resources, settings.ITEMS_PER_PAGE)
     pagination['paginator'] = paginator
-    pagination['page'] = paginator.page(page)
+    try:
+        pagination['page'] = paginator.page(page)
+    except EmptyPage:
+        page = paginator.num_pages if int(page) > 1 else 1
+        pagination['page'] = paginator.page(page)
+
     resources = pagination['page'].object_list
 
     output['resources'] = resources
@@ -159,11 +189,12 @@ def create_edit_resource(request, **kwargs):
             # update solr index
             form.save()
             form.save_m2m()
+            # update DeDup service
+            update_dedup_service(resource)
 
-            output['alert'] = _("Resource successfully edited.")
-            output['alerttype'] = "alert-success"
+            redirect_url = request.session.get("filtered_list", 'main.views.list_resources')
 
-            return redirect('main.views.list_resources')
+            return redirect(redirect_url)
     # new/edit
     else:
         form = ResourceForm(instance=resource, user_data=user_data)
@@ -525,3 +556,23 @@ def delete_language(request, language_id):
     output['alerttype'] = "alert-success"
 
     return render_to_response('main/languages.html', output, context_instance=RequestContext(request))
+
+
+# update DeDup service
+def update_dedup_service(obj):
+
+    if obj.status < 2:
+        print("***update***")
+        dedup_schema = 'LIS_Two'
+        dedup_params = {"titulo": obj.title, "url": obj.link}
+
+        json_data = json.dumps(dedup_params, ensure_ascii=True)
+        dedup_headers = {'Content-Type': 'application/json'}
+
+        ref_id = obj.id
+        dedup_url = "{0}/{1}/{2}/{3}".format(settings.DEDUP_PUT_URL, 'LIS', dedup_schema, ref_id)
+
+        try:
+            dedup_request = requests.post(dedup_url, headers=dedup_headers, data=json_data, timeout=5)
+        except:
+            pass

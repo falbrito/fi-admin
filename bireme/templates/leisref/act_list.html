@@ -59,7 +59,7 @@
                             {% elif actions.filter_owner == 'network' %}
                                 <input type="hidden" name="filter_owner" value="network"/>
                             {% endif %}
-                            <input type='text' name="s"  value="{{ actions.s }}" placeholder="{% trans "Search" %}">&nbsp;
+                            <input type='text' name="s"  value="{{ actions.s }}" placeholder="{% trans "Search by act number. Ex. 1234" %}">&nbsp;
 
                             {% trans "Status" %}:
                             <select name="filter_status">
@@ -85,6 +85,15 @@
 
                             <a href="javascript:void()" id="show_advaced_filters">{% trans "Filters" %}</a>
                             <div class="advanced_filters {% if not show_advaced_filters %}hide{% endif %}">
+                                {% trans "Act type" %}:
+                                <select name="filter_act_type">
+                                    <option value="">{% trans "All" %}</option>
+                                    {% for act_type in act_type_list %}
+                                        <option value="{{ act_type.id }}" {% if actions.filter_act_type|add:"0" == act_type.id %}selected="true"{% endif %}>{{ act_type }}</option>
+                                    {% endfor %}
+                                </select>
+
+
                                 {% trans "Act country/region" %}:
                                 <select name="filter_country">
                                     <option value="">{% trans "All" %}</option>
@@ -92,6 +101,15 @@
                                         <option value="{{ country.id }}" {% if actions.filter_country|add:"0" == country.id %}selected="true"{% endif %}>{{ country }}</option>
                                     {% endfor %}
                                 </select>
+
+                                {% trans "Indexed in" %}:
+                                <select name="filter_indexed_database">
+                                    <option value="">{% trans "All" %}</option>
+                                    {% for idb in indexed_database_list %}
+                                        <option value="{{ idb.id }}" {% if actions.filter_indexed_database|add:"0" == idb.id %}selected="true"{% endif %}>{{ idb }}</option>
+                                    {% endfor %}
+                                </select>
+
                                 <button class="btn" type="submit" name="apply_filters" value="true"><i class='icon-refresh'> {% trans "Apply" %}</i></button>
                             </div>
 
@@ -127,6 +145,31 @@
             </table>
 
             {% include "pagination_generic.html" %}
+
+            {% if paginator.num_pages > 1 %}
+            <div class="pagination input-append">
+                <form>
+                    {% if actions.filter_owner == '*' %}
+                        <input type="hidden" name="filter_owner" value="*"/>
+                    {% elif actions.filter_owner == 'network' %}
+                        <input type="hidden" name="filter_owner" value="network"/>
+                    {% endif %}
+                    <input type="hidden" name="filter_status" value="{{ actions.filter_status }}">
+                    <input type="hidden" name="results_per_page" value="{{ actions.results_per_page }}">
+                    <input type="hidden" name="s" value="{{ actions.s }}">
+
+                    {% if show_advaced_filters %}
+                        <input type="hidden" name="filter_act_type" value="{{ actions.filter_act_type }}">
+                        <input type="hidden" name="filter_country" value="{{ actions.filter_country }}">
+                        <input type="hidden" name="filter_indexed_database" value="{{ actions.filter_indexed_database }}">
+                    {% endif %}
+
+                    {% trans "Go to page" %}:&nbsp;
+                    <input type="text" name="page" value="{{ actions.page }}" class="span1">
+                    <button class="btn btn-primary" type="submit"><i class='icon-ok'></i></button>
+                </form>
+            </div>
+            {% endif %}
         </div>
     </div>
 

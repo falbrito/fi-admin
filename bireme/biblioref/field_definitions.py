@@ -23,7 +23,7 @@ field_tag_map = {'cooperative_center_code': '01', 'id': '02', 'call_number': '03
                  'symbol': '68', 'isbn': '69', 'descriptive_information': '38', 'text_language': '40',
                  'conference_sponsoring_institution': '52', 'conference_name': '53', 'conference_date': '54',
                  'conference_normalized_date': '55', 'conference_city': '56', 'project_sponsoring_institution': '58',
-                 'project_name': '59', 'internal_note': '61', 'publication_date': '64',
+                 'project_name': '59', 'internal_note': '61', 'publication_date': '64', 'publication_country': '67',
                  'publication_date_normalized': '65', 'publication_type': '71', 'total_number_of_references': '72',
                  'time_limits_from': '74', 'time_limits_to': '75', 'check_tags': '76', 'person_as_subject': '78', 'non_decs_region': '82',
                  'abstract': '83', 'transfer_date_to_database': '84', 'author_keyword': '85', 'descriptors_primary': '87',
@@ -54,6 +54,11 @@ abstract_section = ('abstract', {'fields': ['abstract'],
 comp_info_section = ('comp_info', {'fields': ['descriptive_information', 'text_language'],
                                    'legend': _('Complementary Information'),
                                    'classes': ['collapse']})
+
+comp_info_section_doi = ('comp_info', {'fields': ['descriptive_information', 'text_language', 'doi_number'],
+                                       'legend': _('Complementary Information'),
+                                       'classes': ['collapse']})
+
 
 subject_section = ('content_data', {'fields': ['author_keyword'],
                                     'legend': _('Subject'),
@@ -154,7 +159,7 @@ FIELDS_BY_DOCUMENT_TYPE['Mm'] = [indexed_databases,
 
                                  monographic_section,
 
-                                 comp_info_section,
+                                 comp_info_section_doi,
 
                                  other_notes_section,
 
@@ -181,7 +186,7 @@ FIELDS_BY_DOCUMENT_TYPE['Mam'] = [indexed_databases,
                                                                  'english_translated_title', 'pages'],
                                                       'legend': _('Analytic Level')}),
 
-                                  comp_info_section,
+                                  comp_info_section_doi,
 
                                   other_notes_section,
 
@@ -290,7 +295,7 @@ FIELDS_BY_DOCUMENT_TYPE['Nm'] = [indexed_databases,
 
                                  monographic_section,
 
-                                 comp_info_section,
+                                 comp_info_section_doi,
 
                                  other_notes_section,
 
@@ -317,7 +322,7 @@ FIELDS_BY_DOCUMENT_TYPE['Nam'] = [indexed_databases,
                                                                  'english_translated_title', 'pages'],
                                                       'legend': _('Analytic Level')}),
 
-                                  comp_info_section,
+                                  comp_info_section_doi,
 
                                   other_notes_section,
 
@@ -591,6 +596,11 @@ class IndividualAuthorAttributes(colander.MappingSchema):
                 raise exc
 
 
+    def validate_not_url(form, value):
+        if value.startswith('http'):
+            exc = colander.Invalid(form, _("Do not inform URL for this field"))
+            raise exc
+
     degree_choices = [('', '')]
     degree_choices.extend([(aux.code, aux) for aux in
                           AuxCode.objects.filter(field='degree_of_responsibility')])
@@ -608,6 +618,12 @@ class IndividualAuthorAttributes(colander.MappingSchema):
     _r = colander.SchemaNode(colander.String('utf-8'), title=_('Affiliation degree of responsibility'),
                              widget=deform.widget.SelectWidget(values=degree_choices),
                              missing=unicode(''),)
+
+    _k = colander.SchemaNode(colander.String('utf-8'), title=_('ORCID'), validator=validate_not_url, missing=unicode(''),
+                               description=_('Format: 0000-0000-0000-0000'))
+
+    _w = colander.SchemaNode(colander.String('utf-8'), title=_('Web of Science ResearcherID'), validator=validate_not_url,
+                               missing=unicode(''), description=_('Format: D-0000-0000'))
 
 
 class IndividualAuthor(colander.SequenceSchema):
